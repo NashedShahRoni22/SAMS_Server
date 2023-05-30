@@ -1,4 +1,4 @@
-# Pet_Adoption_Server
+# SAMS_Server
 Steps to follow:
 ===============
 1. install node_modules use "npm i"

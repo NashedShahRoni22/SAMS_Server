@@ -25,6 +25,7 @@ async function run() {
     const activityCollection = client.db("SAMS").collection("Activities");
     const userCollection = client.db("SAMS").collection("Users");
     const meetingCollection = client.db("SAMS").collection("Meetings");
+    const presidentSelectionCollection = client.db("SAMS").collection("President");
     
     //post a notice
     app.post("/notices", async (req, res) => {
@@ -147,11 +148,19 @@ async function run() {
       const pets = await cursor.toArray();
       res.send(pets);
     });
-    //delete a activity
+
+    //delete a meeting
     app.delete("/meetings/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await meetingCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //post a meeting
+    app.post("/decision", async (req, res) => {
+      const user = req.body;
+      const result = await presidentSelectionCollection.insertOne(user);
       res.send(result);
     });
 
