@@ -25,8 +25,13 @@ async function run() {
     const activityCollection = client.db("SAMS").collection("Activities");
     const userCollection = client.db("SAMS").collection("Users");
     const meetingCollection = client.db("SAMS").collection("Meetings");
-    const presidentSelectionCollection = client.db("SAMS").collection("President");
-    
+    const voteCollection = client.db("SAMS").collection("Vote");
+    const festiveCollection = client.db("SAMS").collection("Festive");
+    const blogCollection = client.db("SAMS").collection("Blog");
+    const presidentSelectionCollection = client
+      .db("SAMS")
+      .collection("President");
+
     //post a notice
     app.post("/notices", async (req, res) => {
       const pet = req.body;
@@ -55,7 +60,6 @@ async function run() {
       res.send(result);
     });
 
-    
     //post a activity
     app.post("/activity", async (req, res) => {
       const pet = req.body;
@@ -90,17 +94,17 @@ async function run() {
       res.send(result);
     });
 
-    //get users or individual a user 
+    //get users or individual a user
     app.get("/user", async (req, res) => {
       let query = {};
       if (req.query.email) {
         query = {
           email: req.query.email,
         };
-      }else if(req.query.club_name){
-        query ={
-          club_name: req.query.club_name
-        }
+      } else if (req.query.club_name) {
+        query = {
+          club_name: req.query.club_name,
+        };
       }
       const cursor = userCollection.find(query);
       const user = await cursor.toArray();
@@ -137,7 +141,7 @@ async function run() {
     });
 
     //meeting get api
-     app.get("/meetings", async (req, res) => {
+    app.get("/meetings", async (req, res) => {
       let query = {};
       if (req.query.club_name) {
         query = {
@@ -160,11 +164,111 @@ async function run() {
     //post a meeting
     app.post("/decision", async (req, res) => {
       const user = req.body;
+      const query = {
+        email: user.email,
+      };
+
+      const alreadyPosted = await presidentSelectionCollection
+        .find(query)
+        .toArray();
+      if (alreadyPosted.length) {
+        const message = `You have already requested!`;
+        return res.send({ acknowledged: false, message });
+      }
       const result = await presidentSelectionCollection.insertOne(user);
       res.send(result);
     });
 
+    //meeting get api
+    app.get("/decision", async (req, res) => {
+      let query = {};
+      if (req.query.club_name) {
+        query = {
+          club_name: req.query.club_name,
+        };
+      }
+      const cursor = presidentSelectionCollection.find(query);
+      const pets = await cursor.toArray();
+      res.send(pets);
+    });
 
+    //post your vote
+    app.post("/vote", async (req, res) => {
+      const vote = req.body;
+      const query = {
+        user_email: vote.user_email,
+      };
+
+      const alreadyVoted = await voteCollection
+        .find(query)
+        .toArray();
+      if (alreadyVoted.length) {
+        const message = `You have already voted!`;
+        return res.send({ acknowledged: false, message });
+      }
+      const result = await voteCollection.insertOne(vote);
+      res.send(result);
+    });
+
+    app.get("/vote", async (req, res) => {
+      let query = {};
+      if (req.query.club_name) {
+        query = {
+          club_name: req.query.club_name,
+        };
+      }
+      const cursor = voteCollection.find(query);
+      const votes = await cursor.toArray();
+      res.send(votes);
+    });
+
+    //festive request post api
+    app.post("/festive", async (req, res) => {
+      const festive = req.body;
+      const result = await festiveCollection.insertOne(festive);
+      res.send(result);
+    });
+
+    //get festive
+    app.get("/festive", async(req, res)=>{
+      const query = {};
+      const result = await festiveCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    //update festive approval
+    app.put("/festive/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const option = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          isApprove: true,
+        },
+      };
+      const result = await festiveCollection.updateOne(filter, updatedDoc, option);
+      res.send(result);
+    });
+
+    //festive request post api
+    app.post("/blog", async (req, res) => {
+      const blog = req.body;
+      const result = await blogCollection.insertOne(blog);
+      res.send(result);
+    });
+
+    //get blog data
+    app.get("/blog", async (req, res) => {
+      let query = {};
+      if (req.query.club_name) {
+        query = {
+          club_name: req.query.club_name,
+        };
+      }
+      const cursor = blogCollection.find(query);
+      const blogs = await cursor.toArray();
+      res.send(blogs);
+    });
 
     //pets details api
     app.get("/pets/:id", async (req, res) => {
@@ -174,12 +278,7 @@ async function run() {
       res.send(petDetails);
     });
 
-    //reviews post api
-    app.post("/reviews", async (req, res) => {
-      const review = req.body;
-      const result = await reviewsCollection.insertOne(review);
-      res.send(result);
-    });
+    
 
     //reviews get api for individual pet card
     app.get("/reviews", async (req, res) => {
