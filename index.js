@@ -22,6 +22,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const noticesCollection = client.db("SAMS").collection("Notices");
+    const clubsCollection = client.db("SAMS").collection("Clubs");
     const activityCollection = client.db("SAMS").collection("Activities");
     const userCollection = client.db("SAMS").collection("Users");
     const meetingCollection = client.db("SAMS").collection("Meetings");
@@ -31,6 +32,29 @@ async function run() {
     const presidentSelectionCollection = client
       .db("SAMS")
       .collection("President");
+
+    //post a club
+    app.post("/clubs", async (req, res) => {
+      const club = req.body;
+      const result = await clubsCollection.insertOne(club);
+      res.send(result);
+    });
+
+    //get clubs
+    app.get("/clubs", async (req, res) => {
+      const query = {};
+      const cursor = clubsCollection.find(query);
+      const pets = await cursor.toArray();
+      res.send(pets);
+    });
+
+    //delete club
+    app.delete("/clubs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await clubsCollection.deleteOne(query);
+      res.send(result);
+    });
 
     //post a notice
     app.post("/notices", async (req, res) => {
@@ -269,134 +293,15 @@ async function run() {
       const blogs = await cursor.toArray();
       res.send(blogs);
     });
-
+    // =========================================
+    // =========================================
+    // =========================================
     //pets details api
     app.get("/pets/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const petDetails = await petsCollection.findOne(query);
       res.send(petDetails);
-    });
-
-    
-
-    //reviews get api for individual pet card
-    app.get("/reviews", async (req, res) => {
-      let query = {};
-      if (req.query.petId) {
-        query = {
-          petId: req.query.petId,
-        };
-      }
-      const cursor = reviewsCollection.find(query);
-      const reviews = await cursor.toArray();
-      res.send(reviews);
-    });
-
-    //post of pets get api for idividual user
-    app.get("/myposts", async (req, res) => {
-      let query = {};
-      if (req.query.ownerEmail) {
-        query = {
-          ownerEmail: req.query.ownerEmail,
-        };
-      }
-      const cursor = petsCollection.find(query);
-      const reviews = await cursor.toArray();
-      res.send(reviews);
-    });
-
-    //reviews get api for idividual user
-    app.get("/myreviews", async (req, res) => {
-      let query = {};
-      if (req.query.userEmail) {
-        query = {
-          userEmail: req.query.userEmail,
-        };
-      }
-      const cursor = reviewsCollection.find(query);
-      const reviews = await cursor.toArray();
-      res.send(reviews);
-    });
-    //save bookings
-    app.post("/bookings", async (req, res) => {
-      const bookings = req.body;
-      const query = {
-        buyerEmail: bookings.buyerEmail,
-        productId: bookings.productId,
-      };
-
-      const alreadyBooked = await bookingsCollection.find(query).toArray();
-      if (alreadyBooked.length) {
-        const message = `You have already booked ${bookings.name}!`;
-        return res.send({ acknowledged: false, message });
-      }
-      const result = await bookingsCollection.insertOne(bookings);
-      res.send(result);
-    });
-    //bookings get api for idividual user
-    app.get("/mybookings", async (req, res) => {
-      let query = {};
-      if (req.query.buyerEmail) {
-        query = {
-          buyerEmail: req.query.buyerEmail,
-        };
-      }
-      const cursor = bookingsCollection.find(query);
-      const bookings = await cursor.toArray();
-      res.send(bookings);
-    });
-    //delete a bookings
-    app.delete("/bookings/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await bookingsCollection.deleteOne(query);
-      res.send(result);
-    });
-    //delete a review
-    app.delete("/reviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await reviewsCollection.deleteOne(query);
-      res.send(result);
-    });
-    //delete a post
-    app.delete("/myposts/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await petsCollection.deleteOne(query);
-      res.send(result);
-    });
-
-    //paid product
-    app.put("/paidproducts/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const option = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          isPaid: true,
-        },
-      };
-      const result = await petsCollection.updateOne(filter, updatedDoc, option);
-      res.send(result);
-    });
-    //paid booking product
-    app.put("/paidbookingproducts/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const option = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          isPaid: true,
-        },
-      };
-      const result = await bookingsCollection.updateOne(
-        filter,
-        updatedDoc,
-        option
-      );
-      res.send(result);
     });
   } finally {
   }
